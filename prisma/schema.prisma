@@ -1,0 +1,73 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  // output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        String   @id @default(cuid()) 
+  email     String   @unique
+  password  String   
+  name      String?  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  urls      Url[]
+
+  @@map("users")
+}
+
+model Url {
+  id          String    @id @default(cuid())
+  originalUrl String    @db.Text
+  shortCode   String    @unique @db.VarChar(10)
+  customAlias String?   @unique @db.VarChar(50)
+
+  clicks      Int       @default(0)
+
+  expiresAt   DateTime?
+  isActive    Boolean   @default(true)
+
+  userId      String?
+  user        User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  clickEvents ClickEvent[]
+
+  @@index([shortCode])
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("urls")
+}
+
+model ClickEvent {
+  id        String   @id @default(cuid()) 
+
+  urlId     String
+  url       Url      @relation(fields: [urlId], references: [id], onDelete: Cascade)
+
+  clickedAt DateTime @default(now())
+  ipAddress String?  @db.VarChar(45)
+  userAgent String?  @db.Text
+  referer   String?  @db.Text
+  country   String?  @db.VarChar(2)
+  city      String?  @db.VarChar(100)
+  device    String?  @db.VarChar(50)
+  browser   String?  @db.VarChar(50)
+  os        String?  @db.VarChar(50)
+
+  @@index([urlId])
+  @@index([clickedAt])
+  @@map("click_events")
+}
